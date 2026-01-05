@@ -1,0 +1,5 @@
+{
+  "name": "Gemini-Powered E-Commerce Assistant",
+  "description": "A sophisticated AI customer service agent with multi-turn conversation memory, knowledge base retrieval, and automated tool use for order tracking and product search.",
+  "requestFramePermissions": []
+}
