@@ -18,7 +18,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
     // Get expected credentials from environment variables or use defaults
     const expectedUser = process.env.ADMIN_USER || 'admin';
-    const expectedPass = process.env.ADMIN_PASSWORD || 'admin';
+    const expectedPass = process.env.ADMIN_PASSWORD || 'yanghao';
 
     // Simulate small delay for better UX
     setTimeout(() => {
