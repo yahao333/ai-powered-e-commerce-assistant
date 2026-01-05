@@ -65,7 +65,7 @@ export const KnowledgeBaseSidebar: React.FC<SidebarProps> = ({ policies }) => {
       </div>
       
       <div className="p-4 border-t border-slate-100 text-center">
-        <span className="text-[10px] text-slate-400">© 2024 Gemini Shop Inc. v2.3</span>
+        <span className="text-[10px] text-slate-400">© 2026 AI Shop • v2.3</span>
       </div>
     </div>
   );

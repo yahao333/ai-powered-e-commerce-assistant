@@ -21,7 +21,7 @@ export const KNOWLEDGE_BASE: KnowledgeItem[] = [
 ];
 
 export const SYSTEM_PROMPT = `
-你是 "Gemini Shop" 的高级AI客服助手。Gemini Shop 是一家高端电商平台。
+你是 "AI Shop" 的高级AI客服助手。AI Shop 是一家高端电商平台。
 你的目标是帮助用户处理关于产品、订单查询和店面政策的问题。
 
 核心规则：

@@ -11,6 +11,11 @@ import { LoginPage } from './components/LoginPage';
 import { KNOWLEDGE_BASE } from './constants';
 import { generateMassivePrompt } from './utils/longContextGenerator';
 
+const PROVIDER_DISPLAY_NAME: Record<AIProvider, string> = {
+  gemini: '模型 A',
+  deepseek: '模型 B',
+};
+
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [view, setView] = useState<'chat' | 'config'>('chat');
@@ -58,7 +63,7 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, {
       id: Date.now().toString(),
       role: 'system',
-      content: `🔄 已切换至 ${provider === 'gemini' ? 'Google Gemini' : 'DeepSeek'} 模型。`,
+      content: `🔄 已切换至 ${PROVIDER_DISPLAY_NAME[provider]}。`,
       timestamp: new Date()
     }]);
   };
@@ -116,14 +121,14 @@ const App: React.FC = () => {
     const systemMsg: Message = {
       id: Date.now().toString(),
       role: 'system',
-      content: `⚡️ 正在启动长上下文压力测试...\n模型: ${currentProvider}\n数据规模: ${estimatedTokens}\n隐藏密钥: ${secretKey}\n\n正在发送数据...`,
+      content: `⚡️ 正在启动长上下文压力测试...\n模型: ${PROVIDER_DISPLAY_NAME[currentProvider]}\n数据规模: ${estimatedTokens}\n隐藏密钥: ${secretKey}\n\n正在发送数据...`,
       timestamp: new Date(),
     };
     
     setMessages(prev => [...prev, systemMsg]);
 
     setTimeout(async () => {
-       setTypingStatus(`正在向 ${currentProvider} 发送 150k+ Tokens...`);
+       setTypingStatus(`正在向 ${PROVIDER_DISPLAY_NAME[currentProvider]} 发送 150k+ Tokens...`);
        await handleSendMessage(fullPrompt);
     }, 500);
   };
@@ -138,7 +143,7 @@ const App: React.FC = () => {
     const systemMsg: Message = {
       id: Date.now().toString(),
       role: 'system',
-      content: `🛠️ **自定义长上下文测试启动**\n模型: ${currentProvider}\n📊 数据规模: ${content.length.toLocaleString()} 字符 (${estimatedTokens})\n🎯 查找目标: "${needle}"\n\n正在加载数据...`,
+      content: `🛠️ **自定义长上下文测试启动**\n模型: ${PROVIDER_DISPLAY_NAME[currentProvider]}\n📊 数据规模: ${content.length.toLocaleString()} 字符 (${estimatedTokens})\n🎯 查找目标: "${needle}"\n\n正在加载数据...`,
       timestamp: new Date(),
     };
     
@@ -193,7 +198,7 @@ ${content}
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                 <span className="text-xs text-slate-500 font-medium tracking-wide uppercase">
-                  {currentProvider === 'gemini' ? 'Gemini 1.5' : 'DeepSeek V3'} 在线
+                  {PROVIDER_DISPLAY_NAME[currentProvider]} 在线
                 </span>
               </div>
             </div>

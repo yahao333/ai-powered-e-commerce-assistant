@@ -80,7 +80,7 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
 
   // 生成随机噪音数据追加到当前内容
   const handleAppendNoise = () => {
-    const noiseBlock = " [噪音数据生成-测试Gemini长窗口能力-重复填充] ".repeat(1000); // 约 50k chars
+    const noiseBlock = " [噪音数据生成-测试长上下文能力-重复填充] ".repeat(1000); // 约 50k chars
     const newContent = customContent + "\n" + noiseBlock;
     setCustomContent(newContent);
     console.log(`[调试日志] 追加噪音数据，当前总长度: ${newContent.length} 字符`);
@@ -121,10 +121,10 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
                 className={`cursor-pointer p-4 rounded-xl border-2 transition-all relative overflow-hidden ${currentProvider === 'gemini' ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300'}`}
               >
                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800">Google Gemini</span>
+                    <span className="font-bold text-slate-800">模型 A</span>
                     {currentProvider === 'gemini' && <div className="w-4 h-4 rounded-full bg-indigo-600"></div>}
                  </div>
-                 <p className="text-xs text-slate-500 mt-2">使用 Google GenAI SDK (Gemini 1.5/3 Flash)。支持百万级上下文。</p>
+                 <p className="text-xs text-slate-500 mt-2">默认模型，支持更长上下文，适合长文检索与复杂问答。</p>
               </div>
 
               <div 
@@ -132,10 +132,10 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
                 className={`cursor-pointer p-4 rounded-xl border-2 transition-all relative overflow-hidden ${currentProvider === 'deepseek' ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300'}`}
               >
                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800">DeepSeek</span>
+                    <span className="font-bold text-slate-800">模型 B</span>
                     {currentProvider === 'deepseek' && <div className="w-4 h-4 rounded-full bg-indigo-600"></div>}
                  </div>
-                 <p className="text-xs text-slate-500 mt-2">使用 DeepSeek V3 (OpenAI 兼容接口)。推理成本低，代码与逻辑能力强。</p>
+                 <p className="text-xs text-slate-500 mt-2">兼容接口接入，响应更快、成本更低，适合日常客服问答。</p>
                  
                  {/* DeepSeek API Key 输入区域 */}
                  {currentProvider === 'deepseek' && (
@@ -220,8 +220,8 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
             <div>
               <h4 className="font-bold text-amber-900">长上下文压力测试 (Needle In A Haystack)</h4>
               <p className="text-sm text-amber-700/80 mt-1 max-w-lg">
-                生成超过 150k tokens 的测试数据（远超 DeepSeek 128k 上下文限制），测试 Gemini 在海量信息中的检索能力。
-                <span className="block mt-1 text-xs opacity-70">*注意：这会消耗较多 Token 额度。DeepSeek 可能无法处理超大文本。</span>
+                生成超过 150k tokens 的测试数据，用于测试模型在海量信息中的检索能力。
+                <span className="block mt-1 text-xs opacity-70">*注意：这会消耗较多 Token 额度。部分模型可能无法处理超大文本。</span>
               </p>
             </div>
             <button

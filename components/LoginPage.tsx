@@ -44,7 +44,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               Y
             </div>
             <h1 className="text-2xl font-bold text-slate-800">欢迎回来</h1>
-            <p className="text-slate-500 text-sm mt-2 text-center">Gemini E-Commerce Agent 客服管理系统</p>
+            <p className="text-slate-500 text-sm mt-2 text-center">AI 电商客服助手管理系统</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
@@ -113,7 +113,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </div>
 
         <p className="text-center mt-10 text-slate-400 text-xs font-medium uppercase tracking-widest">
-          © 2026 Gemini Shop Security Protocol
+          © 2026 AI Shop Security Protocol
         </p>
       </div>
     </div>

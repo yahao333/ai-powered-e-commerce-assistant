@@ -44,7 +44,7 @@ export class DeepSeekAgent implements LLMAgent {
 
     if (!this.apiKey) {
         console.error("[DeepSeek Service] 错误：缺少 API Key");
-        return "配置错误：未找到 API Key。请在系统配置中输入 DeepSeek API Key，或在环境变量中配置 DEEPSEEK_API_KEY。";
+        return "配置错误：未找到 API Key。请在系统配置中输入模型 B 的 API Key，或在环境变量中配置 DEEPSEEK_API_KEY。";
     }
 
     // 1. 添加用户消息

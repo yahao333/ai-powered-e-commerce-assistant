@@ -104,7 +104,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMe
           </button>
         </form>
         <p className="text-[10px] text-center mt-3 text-slate-400 uppercase tracking-widest font-medium">
-          由 Gemini AI 提供支持 • 中英双语支持
+          由 AI 提供支持 • 中英双语支持
         </p>
       </div>
     </div>

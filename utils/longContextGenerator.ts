@@ -6,7 +6,7 @@
 
 export const generateMassivePrompt = (): { fullPrompt: string, secretKey: string, estimatedTokens: string } => {
     // 基础填充文本
-    const baseSentence = "在人工智能的浩瀚星海中，上下文窗口的大小决定了模型能理解的信息广度。Gemini 1.5 Pro 和 Flash 系列支持高达 100万 到 200万 tokens 的上下文窗口，这使得处理整本书籍、大型代码库或长视频成为可能。DeepSeek V3 目前支持 128k tokens。";
+    const baseSentence = "在人工智能的浩瀚星海中，上下文窗口的大小决定了模型能理解的信息广度。有些大上下文模型可以支持百万级 tokens 的输入，这使得处理整本书籍、大型代码库或长文档成为可能；而一些常见模型的上下文窗口通常更小。";
     
     // 目标字符数：600,000 字符。
     // 中文 token 估算通常为 0.7~1 chars/token。600k chars 约为 400k-600k tokens，远超 128k。
@@ -17,7 +17,7 @@ export const generateMassivePrompt = (): { fullPrompt: string, secretKey: string
     const filler = Array(repeatCount).fill(baseSentence).join("\n");
     
     // 生成随机密钥
-    const secretKey = `GEMINI-TEST-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 10000)}`;
+    const secretKey = `AI-TEST-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 10000)}`;
     
     // 构建完整的 Prompt：大海捞针测试
     // 密钥被放置在海量文本的末尾
