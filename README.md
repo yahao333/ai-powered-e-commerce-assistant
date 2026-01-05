@@ -1,7 +1,3 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # AI 驱动电商客服助手（Gemini / DeepSeek）
 
 一个纯前端的电商客服演示项目：用大模型 + Function Calling（工具调用）实现“像真客服一样”的商品咨询、订单查询、政策答疑，并提供可编辑的“服务政策知识库”和长上下文压力测试入口。
