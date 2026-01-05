@@ -61,18 +61,15 @@
 
 这是一个演示用的“前端假登录”：
 
-- 默认账号/密码：`admin` / `admin`
-- 账号密码可通过环境变量覆盖（未配置时会回退到默认值）：
-  - `ADMIN_USER`
-  - `ADMIN_PASSWORD`
+- 如果你想自定义账号密码：需要在前端构建阶段把 `ADMIN_USER` / `ADMIN_PASSWORD` 注入到 `process.env`（例如在 [vite.config.ts](file:///Users/yanghao/Work/github/ai-powered-e-commerce-assistant/vite.config.ts) 的 `define` 中增加映射）
 
 ## 模型与 Key 配置
 
 - Gemini
   - 使用 `.env.local` 中的 `GEMINI_API_KEY`
 - DeepSeek
-  - 推荐在“系统配置”页选择 DeepSeek 后，直接在页面里输入 Key
-  - 代码也会尝试读取 `DEEPSEEK_API_KEY`（若你的构建方式把它注入到前端环境中）
+  - 在“系统配置”页选择 DeepSeek 后，直接在页面里输入 Key（当前默认方式）
+  - 如需改为环境变量注入：需要在前端构建阶段把 `DEEPSEEK_API_KEY` 注入到 `process.env`
 
 ## 目录结构（核心）
 
