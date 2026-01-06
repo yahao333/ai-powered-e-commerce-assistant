@@ -29,18 +29,41 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
 }) => {
   const [localPolicies, setLocalPolicies] = useState<KnowledgeItem[]>(policies);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  
+  const [searchTerm, setSearchTerm] = useState('');
+
   // 自定义数据实验室状态
   const [customContent, setCustomContent] = useState<string>('');
   const [customNeedle, setCustomNeedle] = useState<string>('SECRET-KEY-999');
   const [fileStats, setFileStats] = useState<{name: string, size: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handlePolicyChange = (index: number, newContent: string) => {
+  const handlePolicyContentChange = (index: number, newContent: string) => {
     const updated = [...localPolicies];
     updated[index] = { ...updated[index], content: newContent };
     setLocalPolicies(updated);
     if (saveStatus === 'saved') setSaveStatus('idle');
+  };
+
+  const handlePolicyTopicChange = (index: number, newTopic: string) => {
+    const updated = [...localPolicies];
+    updated[index] = { ...updated[index], topic: newTopic };
+    setLocalPolicies(updated);
+    if (saveStatus === 'saved') setSaveStatus('idle');
+  };
+
+  const handleAddPolicy = () => {
+    const newPolicy: KnowledgeItem = { topic: "新政策主题", content: "" };
+    setLocalPolicies([...localPolicies, newPolicy]);
+    setSearchTerm(''); // Clear search to show new item
+    if (saveStatus === 'saved') setSaveStatus('idle');
+  };
+
+  const handleDeletePolicy = (index: number) => {
+    if (window.confirm("确定要删除此政策吗？")) {
+      const updated = localPolicies.filter((_, i) => i !== index);
+      setLocalPolicies(updated);
+      if (saveStatus === 'saved') setSaveStatus('idle');
+    }
   };
 
   const handleSave = () => {
@@ -164,26 +187,73 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
 
         {/* 政策配置区域 */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-200 pb-4 gap-4">
             <h3 className="text-lg font-bold text-slate-700">服务政策知识库</h3>
+            <div className="flex items-center gap-2 w-full md:w-auto">
+                <div className="relative flex-grow md:w-64">
+                    <input
+                        type="text"
+                        placeholder="搜索政策..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all"
+                    />
+                    <svg className="absolute left-3 top-2.5 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+                <button 
+                    onClick={handleAddPolicy}
+                    className="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-sm font-bold transition-colors flex items-center gap-1 flex-shrink-0"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    添加
+                </button>
+            </div>
           </div>
           
-          {localPolicies.map((policy, idx) => (
-            <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                   <span className="font-bold text-xs">{idx + 1}</span>
+          <div className="space-y-4">
+            {localPolicies.map((policy, idx) => {
+                const isMatch = !searchTerm || 
+                    policy.topic.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    policy.content.toLowerCase().includes(searchTerm.toLowerCase());
+                
+                if (!isMatch) return null;
+
+                return (
+                    <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow group relative">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                        <span className="font-bold text-xs">{idx + 1}</span>
+                        </div>
+                        <input
+                            type="text"
+                            value={policy.topic}
+                            onChange={(e) => handlePolicyTopicChange(idx, e.target.value)}
+                            className="font-bold text-slate-700 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none transition-all px-1 py-0.5 flex-grow"
+                            placeholder="输入政策主题"
+                        />
+                        <button 
+                            onClick={() => handleDeletePolicy(idx)}
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                            title="删除此政策"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+                    <textarea
+                        value={policy.content}
+                        onChange={(e) => handlePolicyContentChange(idx, e.target.value)}
+                        className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm leading-relaxed"
+                        placeholder={`输入${policy.topic}的具体内容...`}
+                    />
+                    </div>
+                );
+            })}
+            {localPolicies.filter(p => !searchTerm || p.topic.toLowerCase().includes(searchTerm.toLowerCase()) || p.content.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+                <div className="text-center py-10 text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <p>未找到匹配的政策</p>
                 </div>
-                <label className="font-bold text-slate-700">{policy.topic}</label>
-              </div>
-              <textarea
-                value={policy.content}
-                onChange={(e) => handlePolicyChange(idx, e.target.value)}
-                className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm leading-relaxed"
-                placeholder={`输入${policy.topic}内容...`}
-              />
-            </div>
-          ))}
+            )}
+          </div>
           
           <div className="flex items-center justify-end gap-4 pt-4">
             {saveStatus === 'saved' && (
