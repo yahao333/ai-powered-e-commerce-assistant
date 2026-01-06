@@ -205,6 +205,26 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
     reader.readAsText(file);
   };
 
+  const handleAppendNoise = () => {
+    const noiseBlock = " [噪音数据生成-测试长上下文能力-重复填充] ".repeat(1000); // 约 50k chars
+    const newContent = customContent + "\n" + noiseBlock;
+    setCustomContent(newContent);
+    console.log(`[调试日志] 追加噪音数据，当前总长度: ${newContent.length} 字符`);
+  };
+
+  const handleDownload = () => {
+    if (!customContent) return;
+    const blob = new Blob([customContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `test-data-${new Date().toISOString().slice(0,10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const filteredPolicies = localPolicies.filter(p => 
     p.topic.toLowerCase().includes(policySearchTerm.toLowerCase()) || 
     p.content.toLowerCase().includes(policySearchTerm.toLowerCase())
@@ -769,32 +789,79 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
                          {fileStats ? fileStats.name : "点击上传文件"}
                        </p>
                        <p className="text-xs text-gray-400 mt-1">
-                         {fileStats ? `文件大小: ${fileStats.size}` : "支持 txt, md, json 等文本格式"}
-                       </p>
-                     </div>
+                        {fileStats ? `文件大小: ${fileStats.size}` : "支持 txt, md, json 等文本格式"}
+                      </p>
+                    </div>
 
-                     {/* 查找目标输入 */}
-                     {customContent && (
-                       <div className="animate-fadeIn">
-                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                           查找目标 (Needle)
-                         </label>
-                         <div className="flex gap-2">
+                    <div className="flex justify-between items-center">
+                      <button 
+                        onClick={handleAppendNoise}
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        生成测试数据 (+50k)
+                      </button>
+
+                      {customContent && (
+                        <button 
+                          onClick={handleDownload}
+                          className="text-sm text-green-600 hover:text-green-800 hover:underline flex items-center gap-1 transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          下载数据
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 查找目标输入与状态显示 */}
+                    {customContent && (
+                       <div className="animate-fadeIn space-y-4">
+                         {/* 状态统计 */}
+                         <div className="bg-white p-3 rounded-xl border border-blue-100 grid grid-cols-2 gap-4">
+                           <div>
+                             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">当前数据规模</label>
+                             <div className="flex items-baseline gap-2">
+                               <span className="font-mono text-xl font-bold text-gray-800">{customContent.length.toLocaleString()}</span>
+                               <span className="text-xs text-slate-500">字符</span>
+                             </div>
+                           </div>
+                           <div>
+                             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">源文件信息</label>
+                             <div className="text-sm text-gray-600 truncate" title={fileStats?.name}>
+                               {fileStats ? `${fileStats.name} (${fileStats.size})` : "生成的测试数据"}
+                             </div>
+                           </div>
+                         </div>
+
+                         {/* Needle 输入 */}
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">
+                             查找目标 (Needle)
+                           </label>
                            <input
                              type="text"
                              value={customNeedle}
                              onChange={(e) => setCustomNeedle(e.target.value)}
-                             placeholder="输入你想让 AI 查找的内容..."
-                             className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                             placeholder="输入你想让 AI 查找的内容 (Secret Key)..."
+                             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-blue-700 font-bold"
                            />
-                           <button 
-                             onClick={() => onRunCustomTest?.(customContent, customNeedle)}
-                             disabled={!customNeedle.trim()}
-                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                           >
-                             开始测试
-                           </button>
                          </div>
+
+                         {/* 运行按钮 */}
+                         <button 
+                           onClick={() => onRunCustomTest?.(customContent, customNeedle)}
+                           disabled={!customNeedle.trim()}
+                           className="w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-bold shadow-md flex justify-center items-center gap-2"
+                         >
+                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                           </svg>
+                           开始自定义压力测试
+                         </button>
                        </div>
                      )}
                    </div>
