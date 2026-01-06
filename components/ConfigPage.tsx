@@ -1,15 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { KnowledgeItem, Product } from '../types';
+import { KnowledgeItem, Product, Order } from '../types';
 
 export type AIProvider = 'gemini' | 'deepseek';
 
 interface ConfigPageProps {
   policies: KnowledgeItem[];
   products: Product[];
+  orders: Order[]; // 新增：订单数据
   currentProvider: AIProvider;
   deepseekKey: string;
   onUpdatePolicies: (policies: KnowledgeItem[]) => void;
   onUpdateProducts: (products: Product[]) => void;
+  onUpdateOrders: (orders: Order[]) => void; // 新增：订单更新回调
   onRunLongContextTest?: () => void;
   onRunCustomTest?: (content: string, needle: string) => void;
   onProviderChange: (provider: AIProvider) => void;
@@ -20,17 +22,19 @@ interface ConfigPageProps {
 export const ConfigPage: React.FC<ConfigPageProps> = ({ 
   policies, 
   products,
+  orders, // 接收订单数据
   currentProvider,
   deepseekKey,
   onUpdatePolicies, 
   onUpdateProducts,
+  onUpdateOrders, // 接收订单更新函数
   onRunLongContextTest, 
   onRunCustomTest,
   onProviderChange,
   onDeepseekKeyChange,
   onBack 
 }) => {
-  const [activeTab, setActiveTab] = useState<'policy' | 'product' | 'settings'>('policy');
+  const [activeTab, setActiveTab] = useState<'policy' | 'product' | 'order' | 'settings'>('policy'); // 新增 order tab
   
   // 政策管理状态
   const [localPolicies, setLocalPolicies] = useState<KnowledgeItem[]>(policies);
@@ -41,6 +45,11 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
   const [localProducts, setLocalProducts] = useState<Product[]>(products);
   const [productSaveStatus, setProductSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [productSearchTerm, setProductSearchTerm] = useState('');
+
+  // 订单管理状态 (New)
+  const [localOrders, setLocalOrders] = useState<Order[]>(orders);
+  const [orderSaveStatus, setOrderSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [orderSearchTerm, setOrderSearchTerm] = useState('');
 
   // 自定义数据实验室状态
   const [customContent, setCustomContent] = useState<string>('');
@@ -66,7 +75,7 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
   const handleAddPolicy = () => {
     const newPolicy: KnowledgeItem = { topic: "新政策主题", content: "" };
     setLocalPolicies([...localPolicies, newPolicy]);
-    setPolicySearchTerm(''); // Clear search to show new item
+    setPolicySearchTerm('');
     if (policySaveStatus === 'saved') setPolicySaveStatus('idle');
   };
 
@@ -125,6 +134,51 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
     }, 600);
   };
 
+  // --- 订单管理处理函数 (New) ---
+  const handleOrderChange = (id: string, field: keyof Order, value: any) => {
+    const updated = localOrders.map(o => {
+        if (o.id === id) {
+            // 处理 items 数组（以逗号分隔的字符串输入）
+            if (field === 'items' && typeof value === 'string') {
+                return { ...o, [field]: value.split(',').map(s => s.trim()).filter(Boolean) };
+            }
+            return { ...o, [field]: value };
+        }
+        return o;
+    });
+    setLocalOrders(updated);
+    if (orderSaveStatus === 'saved') setOrderSaveStatus('idle');
+  };
+
+  const handleAddOrder = () => {
+    const newOrder: Order = {
+      id: `ORD-${Date.now()}`,
+      customerName: "新客户",
+      items: [],
+      status: 'Processing',
+      estimatedDelivery: ''
+    };
+    setLocalOrders([newOrder, ...localOrders]);
+    setOrderSearchTerm('');
+    if (orderSaveStatus === 'saved') setOrderSaveStatus('idle');
+  };
+
+  const handleDeleteOrder = (id: string) => {
+    if (window.confirm("确定要删除此订单吗？")) {
+      const updated = localOrders.filter(o => o.id !== id);
+      setLocalOrders(updated);
+      if (orderSaveStatus === 'saved') setOrderSaveStatus('idle');
+    }
+  };
+
+  const handleSaveOrders = () => {
+    setOrderSaveStatus('saving');
+    setTimeout(() => {
+      onUpdateOrders(localOrders);
+      setOrderSaveStatus('saved');
+    }, 600);
+  };
+
   // 处理文件上传
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -162,6 +216,11 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
     p.id.toLowerCase().includes(productSearchTerm.toLowerCase())
   );
 
+  const filteredOrders = localOrders.filter(o => 
+    o.id.toLowerCase().includes(orderSearchTerm.toLowerCase()) ||
+    o.customerName.toLowerCase().includes(orderSearchTerm.toLowerCase())
+  );
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* 顶部导航 */}
@@ -194,6 +253,14 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
             }`}
           >
             商品管理
+          </button>
+          <button
+            onClick={() => setActiveTab('order')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              activeTab === 'order' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            订单管理
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -257,7 +324,6 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
 
             <div className="grid gap-6">
               {filteredPolicies.map((policy, index) => {
-                // Find original index in localPolicies for updating
                 const originalIndex = localPolicies.indexOf(policy);
                 return (
                   <div key={index} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden group">
@@ -434,158 +500,311 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({
               {filteredProducts.length === 0 && (
                 <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
                   <p className="text-gray-500">没有找到匹配的商品。</p>
-                  <button onClick={handleAddProduct} className="mt-2 text-blue-600 hover:underline">添加一个新商品</button>
+                  <button onClick={handleAddProduct} className="mt-2 text-blue-600 hover:underline">创建一个新商品</button>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* --- 模型设置 Tab (原配置页内容) --- */}
-        {activeTab === 'settings' && (
-          <div className="space-y-8 animate-fadeIn">
-            {/* AI 模型选择 */}
-            <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <span className="bg-blue-100 p-2 rounded-lg mr-3 text-blue-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                  </svg>
-                </span>
-                AI 模型选择
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div 
-                  onClick={() => onProviderChange('gemini')}
-                  className={`cursor-pointer p-4 rounded-xl border-2 transition-all ${
-                    currentProvider === 'gemini' 
-                      ? 'border-blue-500 bg-blue-50' 
-                      : 'border-gray-200 hover:border-blue-200'
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-gray-800">模型 A (Gemini)</span>
-                    {currentProvider === 'gemini' && <span className="text-blue-500">● 活跃</span>}
-                  </div>
-                  <p className="text-sm text-gray-500">Google 最新的多模态模型，擅长长文本处理和多任务理解。</p>
-                </div>
+        {/* --- 订单管理 Tab (New) --- */}
+        {activeTab === 'order' && (
+          <div className="space-y-6 animate-fadeIn">
+             {/* Header with Search and Actions */}
+             <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+               <div className="relative w-96">
+                 <input 
+                   type="text" 
+                   placeholder="搜索订单号或客户名..." 
+                   value={orderSearchTerm}
+                   onChange={(e) => setOrderSearchTerm(e.target.value)}
+                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                 />
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                 </svg>
+               </div>
+               <div className="flex gap-3">
+                 <button 
+                   onClick={handleAddOrder}
+                   className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium"
+                 >
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                   </svg>
+                   创建订单
+                 </button>
+                 <button 
+                   onClick={handleSaveOrders}
+                   disabled={orderSaveStatus === 'saving' || orderSaveStatus === 'saved'}
+                   className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium text-white transition-all shadow-md ${
+                     orderSaveStatus === 'saved' ? 'bg-green-500 hover:bg-green-600' : 
+                     orderSaveStatus === 'saving' ? 'bg-gray-400 cursor-not-allowed' : 
+                     'bg-blue-600 hover:bg-blue-700'
+                   }`}
+                 >
+                   {orderSaveStatus === 'saved' ? (
+                     <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        已保存
+                     </>
+                   ) : orderSaveStatus === 'saving' ? '保存中...' : '保存更改'}
+                 </button>
+               </div>
+             </div>
 
-                <div 
-                  onClick={() => onProviderChange('deepseek')}
-                  className={`cursor-pointer p-4 rounded-xl border-2 transition-all ${
-                    currentProvider === 'deepseek' 
-                      ? 'border-blue-500 bg-blue-50' 
-                      : 'border-gray-200 hover:border-blue-200'
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-gray-800">模型 B (DeepSeek)</span>
-                    {currentProvider === 'deepseek' && <span className="text-blue-500">● 活跃</span>}
-                  </div>
-                  <p className="text-sm text-gray-500">DeepSeek-V3，国产开源之光，逻辑推理能力强劲。</p>
-                  
-                  {/* DeepSeek Key 输入框 */}
-                  <div className="mt-4" onClick={(e) => e.stopPropagation()}>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">API Key (可选)</label>
-                    <input 
-                      type="password" 
-                      value={deepseekKey}
-                      onChange={(e) => onDeepseekKeyChange && onDeepseekKeyChange(e.target.value)}
-                      placeholder="sk-..."
-                      className="w-full text-sm p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <p className="text-xs text-gray-400 mt-1">如未设置，将尝试使用环境变量。</p>
-                  </div>
-                </div>
-              </div>
-            </section>
+             {/* Order List */}
+             <div className="space-y-4">
+               {filteredOrders.map((order) => (
+                 <div key={order.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 hover:shadow-md transition-all group">
+                   <div className="grid grid-cols-12 gap-4 items-start">
+                     {/* ID & Customer */}
+                     <div className="col-span-3 space-y-2">
+                       <div>
+                         <label className="text-xs text-gray-500 block mb-1">订单 ID</label>
+                         <input 
+                           type="text" 
+                           value={order.id}
+                           onChange={(e) => handleOrderChange(order.id, 'id', e.target.value)}
+                           className="w-full p-2 bg-gray-50 border border-gray-200 rounded text-sm font-mono text-gray-600"
+                         />
+                       </div>
+                       <div>
+                         <label className="text-xs text-gray-500 block mb-1">客户姓名</label>
+                         <input 
+                           type="text" 
+                           value={order.customerName}
+                           onChange={(e) => handleOrderChange(order.id, 'customerName', e.target.value)}
+                           className="w-full p-2 border border-gray-200 rounded text-sm font-medium"
+                         />
+                       </div>
+                     </div>
 
-            {/* 长上下文测试工具 */}
-            {onRunLongContextTest && onRunCustomTest && (
-            <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <span className="bg-purple-100 p-2 rounded-lg mr-3 text-purple-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                  </svg>
-                </span>
-                实验室：长上下文能力测试 (Needle In A Haystack)
-              </h2>
-              
-              <div className="space-y-6">
-                {/* 预设测试 */}
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                  <h3 className="font-medium text-gray-700 mb-2">快速测试</h3>
-                  <p className="text-sm text-gray-500 mb-4">生成约 50k tokens 的混合数据，并在其中插入隐藏信息"SecretCode: 42"。</p>
-                  <button 
-                    onClick={onRunLongContextTest}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium shadow-sm"
-                  >
-                    运行 50k 压力测试
-                  </button>
-                </div>
+                     {/* Status & Date */}
+                     <div className="col-span-3 space-y-2">
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">状态</label>
+                          <select
+                            value={order.status}
+                            onChange={(e) => handleOrderChange(order.id, 'status', e.target.value)}
+                            className="w-full p-2 border border-gray-200 rounded text-sm"
+                          >
+                            <option value="Processing">Processing</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Returned">Returned</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">预计送达</label>
+                          <input 
+                            type="text" 
+                            value={order.estimatedDelivery || ''}
+                            onChange={(e) => handleOrderChange(order.id, 'estimatedDelivery', e.target.value)}
+                            placeholder="YYYY-MM-DD"
+                            className="w-full p-2 border border-gray-200 rounded text-sm"
+                          />
+                        </div>
+                     </div>
 
-                {/* 自定义测试 */}
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                  <h3 className="font-medium text-gray-700 mb-2">自定义数据测试</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">1. 上传长文本文件 (txt/md/json)</label>
-                      <div className="flex items-center gap-3">
-                        <button 
-                          onClick={() => fileInputRef.current?.click()}
-                          className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          选择文件...
-                        </button>
-                        <input 
-                          type="file" 
-                          ref={fileInputRef}
-                          className="hidden" 
-                          accept=".txt,.md,.json,.log"
-                          onChange={handleFileUpload}
+                     {/* Items */}
+                     <div className="col-span-5">
+                        <label className="text-xs text-gray-500 block mb-1">商品列表 (ID, 逗号分隔)</label>
+                        <textarea 
+                          value={order.items.join(', ')}
+                          onChange={(e) => handleOrderChange(order.id, 'items', e.target.value)}
+                          className="w-full h-[108px] p-2 border border-gray-200 rounded text-sm resize-none"
                         />
-                        {fileStats && (
-                          <span className="text-sm text-green-600 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            {fileStats.name} ({fileStats.size})
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">2. 设置待查找的“针” (Needle)</label>
-                      <input 
-                        type="text" 
-                        value={customNeedle}
-                        onChange={(e) => setCustomNeedle(e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-lg text-sm"
-                        placeholder="例如：特定订单号、隐藏口令等"
-                      />
-                    </div>
-
-                    <button 
-                      onClick={() => onRunCustomTest(customContent, customNeedle)}
-                      disabled={!customContent}
-                      className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
-                        customContent 
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm' 
-                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      }`}
-                    >
-                      开始自定义测试
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-            )}
+                     {/* Actions */}
+                     <div className="col-span-1 flex justify-center pt-8">
+                        <button 
+                          onClick={() => handleDeleteOrder(order.id)}
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="删除订单"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                     </div>
+                   </div>
+                 </div>
+               ))}
+               {filteredOrders.length === 0 && (
+                 <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+                   <p className="text-gray-500">没有找到匹配的订单。</p>
+                   <button onClick={handleAddOrder} className="mt-2 text-blue-600 hover:underline">创建一个新订单</button>
+                 </div>
+               )}
+             </div>
           </div>
         )}
+
+        {/* --- 模型设置 Tab --- */}
+        {activeTab === 'settings' && (
+          <div className="space-y-8 animate-fadeIn">
+            {/* 模型选择卡片 */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                 </svg>
+                 AI 模型选择
+               </h2>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div 
+                   onClick={() => onProviderChange('gemini')}
+                   className={`cursor-pointer p-4 rounded-xl border-2 transition-all ${
+                     currentProvider === 'gemini' 
+                       ? 'border-indigo-600 bg-indigo-50' 
+                       : 'border-gray-200 hover:border-indigo-300'
+                   }`}
+                 >
+                   <div className="flex justify-between items-center mb-2">
+                     <span className="font-bold text-gray-800">模型 A (Gemini)</span>
+                     {currentProvider === 'gemini' && (
+                       <span className="w-3 h-3 bg-indigo-600 rounded-full"></span>
+                     )}
+                   </div>
+                   <p className="text-sm text-gray-500">Google 的高性能多模态模型，擅长推理和创意写作。</p>
+                 </div>
+
+                 <div 
+                   onClick={() => onProviderChange('deepseek')}
+                   className={`cursor-pointer p-4 rounded-xl border-2 transition-all ${
+                     currentProvider === 'deepseek' 
+                       ? 'border-indigo-600 bg-indigo-50' 
+                       : 'border-gray-200 hover:border-indigo-300'
+                   }`}
+                 >
+                   <div className="flex justify-between items-center mb-2">
+                     <span className="font-bold text-gray-800">模型 B (DeepSeek)</span>
+                     {currentProvider === 'deepseek' && (
+                       <span className="w-3 h-3 bg-indigo-600 rounded-full"></span>
+                     )}
+                   </div>
+                   <p className="text-sm text-gray-500">专注于代码和逻辑推理的高级模型，提供深度思考能力。</p>
+                 </div>
+               </div>
+
+               {/* DeepSeek Key Input */}
+               {currentProvider === 'deepseek' && (
+                 <div className="mt-4 animate-fadeIn">
+                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                     DeepSeek API Key
+                   </label>
+                   <input
+                     type="password"
+                     value={deepseekKey}
+                     onChange={(e) => onDeepseekKeyChange?.(e.target.value)}
+                     placeholder="sk-..."
+                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono"
+                   />
+                   <p className="text-xs text-gray-500 mt-1">请输入您的 DeepSeek API Key 以启用服务。</p>
+                 </div>
+               )}
+            </div>
+
+            {/* 长上下文实验室 */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+               <div className="flex justify-between items-start mb-4">
+                 <div>
+                   <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                     </svg>
+                     长上下文实验室
+                   </h2>
+                   <p className="text-sm text-gray-500 mt-1">测试模型处理海量数据的能力 (100k+ Tokens)</p>
+                 </div>
+               </div>
+
+               <div className="space-y-6">
+                 {/* 标准测试 */}
+                 <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                   <h3 className="font-medium text-purple-900 mb-2">标准压力测试</h3>
+                   <p className="text-sm text-purple-700 mb-4">
+                     生成包含隐藏密钥的 150k+ Token 随机数据，测试模型能否在大海捞针中找到关键信息。
+                   </p>
+                   <button 
+                     onClick={onRunLongContextTest}
+                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm text-sm font-medium flex items-center gap-2"
+                   >
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                     </svg>
+                     运行标准压力测试
+                   </button>
+                 </div>
+
+                 {/* 自定义测试 */}
+                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                   <h3 className="font-medium text-blue-900 mb-2">自定义数据测试</h3>
+                   <p className="text-sm text-blue-700 mb-4">
+                     上传您自己的文本文件（支持 .txt, .md, .json, .log），测试模型对特定数据的理解能力。
+                   </p>
+                   
+                   <div className="space-y-4">
+                     {/* 文件上传区域 */}
+                     <div 
+                       className="border-2 border-dashed border-blue-200 rounded-lg p-6 text-center bg-white cursor-pointer hover:border-blue-400 transition-colors"
+                       onClick={() => fileInputRef.current?.click()}
+                     >
+                       <input 
+                         type="file" 
+                         ref={fileInputRef}
+                         onChange={handleFileUpload}
+                         accept=".txt,.md,.json,.log,.js,.ts,.tsx,.css,.html"
+                         className="hidden"
+                       />
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                       </svg>
+                       <p className="text-sm text-gray-600 font-medium">
+                         {fileStats ? fileStats.name : "点击上传文件"}
+                       </p>
+                       <p className="text-xs text-gray-400 mt-1">
+                         {fileStats ? `文件大小: ${fileStats.size}` : "支持 txt, md, json 等文本格式"}
+                       </p>
+                     </div>
+
+                     {/* 查找目标输入 */}
+                     {customContent && (
+                       <div className="animate-fadeIn">
+                         <label className="block text-sm font-medium text-gray-700 mb-1">
+                           查找目标 (Needle)
+                         </label>
+                         <div className="flex gap-2">
+                           <input
+                             type="text"
+                             value={customNeedle}
+                             onChange={(e) => setCustomNeedle(e.target.value)}
+                             placeholder="输入你想让 AI 查找的内容..."
+                             className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           />
+                           <button 
+                             onClick={() => onRunCustomTest?.(customContent, customNeedle)}
+                             disabled={!customNeedle.trim()}
+                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                           >
+                             开始测试
+                           </button>
+                         </div>
+                       </div>
+                     )}
+                   </div>
+                 </div>
+               </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
-};
+}

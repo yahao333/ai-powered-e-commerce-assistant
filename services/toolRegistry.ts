@@ -1,7 +1,6 @@
 
 import { Type, FunctionDeclaration } from "@google/genai";
-import { MOCK_ORDERS } from "../constants";
-import { KnowledgeItem, Product } from "../types";
+import { KnowledgeItem, Product, Order } from "../types";
 
 // --- 1. 工具定义 (Gemini Format) ---
 export const getGeminiTools = (policies: KnowledgeItem[]): FunctionDeclaration[] => {
@@ -118,8 +117,9 @@ export const TOOL_DISPLAY_NAMES: Record<string, string> = {
  * @param args 参数对象
  * @param policies 当前的知识库策略
  * @param products 当前的商品列表
+ * @param orders 当前的订单列表
  */
-export async function executeToolLogic(name: string, args: any, policies: KnowledgeItem[], products: Product[]) {
+export async function executeToolLogic(name: string, args: any, policies: KnowledgeItem[], products: Product[], orders: Order[]) {
   console.log(`[调试日志/ToolRegistry] 执行工具: ${name}`, args);
   
   switch (name) {
@@ -132,7 +132,7 @@ export async function executeToolLogic(name: string, args: any, policies: Knowle
       return results.length > 0 ? JSON.stringify(results) : "未找到匹配该查询的商品。";
     
     case 'getOrderStatus':
-      const order = MOCK_ORDERS.find(o => o.id === args.orderId);
+      const order = orders.find(o => o.id === args.orderId);
       console.log(`[调试日志/ToolRegistry] 订单查询:`, order ? '成功' : '失败');
       return order ? JSON.stringify(order) : `未找到订单 ${args.orderId}。请检查订单号是否正确。`;
     

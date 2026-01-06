@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { SYSTEM_PROMPT } from "../constants";
-import { KnowledgeItem, Product } from "../types";
+import { KnowledgeItem, Product, Order } from "../types";
 import { LLMAgent } from "./agentInterface";
 import { getGeminiTools, TOOL_DISPLAY_NAMES, executeToolLogic } from "./toolRegistry";
 
@@ -9,10 +9,12 @@ export class GeminiAgent implements LLMAgent {
   private history: any[] = [];
   private policies: KnowledgeItem[];
   private products: Product[];
+  private orders: Order[];
 
-  constructor(initialPolicies: KnowledgeItem[], initialProducts: Product[]) {
+  constructor(initialPolicies: KnowledgeItem[], initialProducts: Product[], initialOrders: Order[] = []) {
     this.policies = initialPolicies;
     this.products = initialProducts;
+    this.orders = initialOrders;
   }
 
   public updatePolicies(newPolicies: KnowledgeItem[]) {
@@ -21,6 +23,10 @@ export class GeminiAgent implements LLMAgent {
 
   public updateProducts(newProducts: Product[]) {
     this.products = newProducts;
+  }
+
+  public updateOrders(newOrders: Order[]) {
+    this.orders = newOrders;
   }
 
   async handleConversation(userInput: string, onStatusUpdate?: (status: string) => void): Promise<string> {
@@ -72,7 +78,7 @@ export class GeminiAgent implements LLMAgent {
             await new Promise(resolve => setTimeout(resolve, 500));
 
             // 使用通用工具执行逻辑
-            const result = await executeToolLogic(fc.name, fc.args, this.policies, this.products);
+            const result = await executeToolLogic(fc.name, fc.args, this.policies, this.products, this.orders);
             
             return {
               functionResponse: {

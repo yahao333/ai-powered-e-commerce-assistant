@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Message, KnowledgeItem, Product } from './types';
+import { Message, KnowledgeItem, Product, Order } from './types';
 import { LLMAgent } from './services/agentInterface';
 import { GeminiAgent } from './services/geminiService';
 import { DeepSeekAgent } from './services/deepseekService';
@@ -8,7 +8,7 @@ import { ChatInterface } from './components/ChatInterface';
 import { KnowledgeBaseSidebar } from './components/KnowledgeBaseSidebar';
 import { ConfigPage, AIProvider } from './components/ConfigPage';
 import { LoginPage } from './components/LoginPage';
-import { KNOWLEDGE_BASE, MOCK_PRODUCTS } from './constants';
+import { KNOWLEDGE_BASE, MOCK_PRODUCTS, MOCK_ORDERS } from './constants';
 import { generateMassivePrompt } from './utils/longContextGenerator';
 
 const PROVIDER_DISPLAY_NAME: Record<AIProvider, string> = {
@@ -25,6 +25,7 @@ const App: React.FC = () => {
   const [deepseekKey, setDeepseekKey] = useState(''); // 新增：DeepSeek Key 状态
   const [policies, setPolicies] = useState<KnowledgeItem[]>(KNOWLEDGE_BASE);
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'init-1',
@@ -43,10 +44,10 @@ const App: React.FC = () => {
   useEffect(() => {
     console.log(`[系统日志] 初始化 Agent, Provider: ${currentProvider}`);
     if (currentProvider === 'gemini') {
-      agentRef.current = new GeminiAgent(policies, products);
+      agentRef.current = new GeminiAgent(policies, products, orders);
     } else if (currentProvider === 'deepseek') {
       // 传入 deepseekKey
-      agentRef.current = new DeepSeekAgent(policies, products, deepseekKey);
+      agentRef.current = new DeepSeekAgent(policies, products, orders, deepseekKey);
     }
   }, [currentProvider, deepseekKey]); // 依赖 deepseekKey 变化，当 Key 更新时重新实例化 Agent
 
@@ -244,6 +245,8 @@ ${content}
             onUpdatePolicies={setPolicies} 
             products={products}
             onUpdateProducts={setProducts}
+            orders={orders}
+            onUpdateOrders={setOrders}
             onRunLongContextTest={handleRunLongContextTest}
             onRunCustomTest={handleRunCustomTest}
             onProviderChange={handleProviderChange}

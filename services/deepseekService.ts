@@ -1,6 +1,6 @@
 
 import { SYSTEM_PROMPT } from "../constants";
-import { KnowledgeItem, Product } from "../types";
+import { KnowledgeItem, Product, Order } from "../types";
 import { LLMAgent } from "./agentInterface";
 import { getDeepSeekTools, TOOL_DISPLAY_NAMES, executeToolLogic } from "./toolRegistry";
 
@@ -16,12 +16,14 @@ export class DeepSeekAgent implements LLMAgent {
   private history: DeepSeekMessage[] = [];
   private policies: KnowledgeItem[];
   private products: Product[];
+  private orders: Order[];
   private apiKey: string;
   private baseUrl: string;
 
-  constructor(initialPolicies: KnowledgeItem[], initialProducts: Product[], apiKey?: string) {
+  constructor(initialPolicies: KnowledgeItem[], initialProducts: Product[], initialOrders: Order[] = [], apiKey?: string) {
     this.policies = initialPolicies;
     this.products = initialProducts;
+    this.orders = initialOrders;
     // 优先使用传入的 Key，其次是环境变量中的 DeepSeek Key，最后尝试通用 Key
     this.apiKey = apiKey || process.env.DEEPSEEK_API_KEY || process.env.API_KEY || ''; 
     this.baseUrl = "https://api.deepseek.com/chat/completions"; 
@@ -44,6 +46,11 @@ export class DeepSeekAgent implements LLMAgent {
   public updateProducts(newProducts: Product[]) {
     console.log(`[DeepSeek Service] 更新商品列表，共 ${newProducts.length} 条。`);
     this.products = newProducts;
+  }
+
+  public updateOrders(newOrders: Order[]) {
+    console.log(`[DeepSeek Service] 更新订单列表，共 ${newOrders.length} 条。`);
+    this.orders = newOrders;
   }
 
   async handleConversation(userInput: string, onStatusUpdate?: (status: string) => void): Promise<string> {
@@ -150,7 +157,7 @@ export class DeepSeekAgent implements LLMAgent {
           // 执行工具
           let resultString = "";
           try {
-             const result = await executeToolLogic(functionName, args, this.policies, this.products);
+             const result = await executeToolLogic(functionName, args, this.policies, this.products, this.orders);
              resultString = typeof result === 'string' ? result : JSON.stringify(result);
              console.log(`[DeepSeek Service] 工具执行成功。结果长度: ${resultString.length} 字符`);
           } catch (e: any) {
