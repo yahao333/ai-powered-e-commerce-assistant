@@ -65,6 +65,16 @@ const App: React.FC = () => {
     }
   }, [products]);
 
+  // 当订单变更时同步给 Agent
+  useEffect(() => {
+    if (agentRef.current) {
+      console.log(`[系统日志] 同步最新订单到模型，当前数量: ${orders.length}`);
+      agentRef.current.updateOrders(orders);
+    } else {
+      console.log(`[系统日志] 未初始化Agent，无法同步订单`);
+    }
+  }, [orders]);
+
   // 处理切换 Provider
   const handleProviderChange = (provider: AIProvider) => {
     setCurrentProvider(provider);
