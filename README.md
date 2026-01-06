@@ -23,7 +23,7 @@
 
 ## 在线预览
 
-- AI Studio 应用： https://ai.studio/apps/drive/1mpy4dypfJv6L5Q8fqMlR2d4Shc-6C8Ty
+- AI 应用： https://ai-assistant-delta-lemon.vercel.app/
 
 ## 快速开始（本地运行）
 
