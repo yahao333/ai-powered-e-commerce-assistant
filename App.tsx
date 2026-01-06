@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Message, KnowledgeItem } from './types';
+import { Message, KnowledgeItem, Product } from './types';
 import { LLMAgent } from './services/agentInterface';
 import { GeminiAgent } from './services/geminiService';
 import { DeepSeekAgent } from './services/deepseekService';
@@ -8,7 +8,7 @@ import { ChatInterface } from './components/ChatInterface';
 import { KnowledgeBaseSidebar } from './components/KnowledgeBaseSidebar';
 import { ConfigPage, AIProvider } from './components/ConfigPage';
 import { LoginPage } from './components/LoginPage';
-import { KNOWLEDGE_BASE } from './constants';
+import { KNOWLEDGE_BASE, MOCK_PRODUCTS } from './constants';
 import { generateMassivePrompt } from './utils/longContextGenerator';
 
 const PROVIDER_DISPLAY_NAME: Record<AIProvider, string> = {
@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const [currentProvider, setCurrentProvider] = useState<AIProvider>('gemini');
   const [deepseekKey, setDeepseekKey] = useState(''); // 新增：DeepSeek Key 状态
   const [policies, setPolicies] = useState<KnowledgeItem[]>(KNOWLEDGE_BASE);
+  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'init-1',
@@ -42,10 +43,10 @@ const App: React.FC = () => {
   useEffect(() => {
     console.log(`[系统日志] 初始化 Agent, Provider: ${currentProvider}`);
     if (currentProvider === 'gemini') {
-      agentRef.current = new GeminiAgent(policies);
+      agentRef.current = new GeminiAgent(policies, products);
     } else if (currentProvider === 'deepseek') {
       // 传入 deepseekKey
-      agentRef.current = new DeepSeekAgent(policies, deepseekKey);
+      agentRef.current = new DeepSeekAgent(policies, products, deepseekKey);
     }
   }, [currentProvider, deepseekKey]); // 依赖 deepseekKey 变化，当 Key 更新时重新实例化 Agent
 
@@ -55,6 +56,13 @@ const App: React.FC = () => {
       agentRef.current.updatePolicies(policies);
     }
   }, [policies]);
+
+  // 当商品变更时同步给 Agent
+  useEffect(() => {
+    if (agentRef.current) {
+      agentRef.current.updateProducts(products);
+    }
+  }, [products]);
 
   // 处理切换 Provider
   const handleProviderChange = (provider: AIProvider) => {
@@ -234,10 +242,12 @@ ${content}
             currentProvider={currentProvider}
             deepseekKey={deepseekKey} // 传入 Key 状态
             onUpdatePolicies={setPolicies} 
+            products={products}
+            onUpdateProducts={setProducts}
             onRunLongContextTest={handleRunLongContextTest}
             onRunCustomTest={handleRunCustomTest}
             onProviderChange={handleProviderChange}
-            onDeepSeekKeyChange={setDeepseekKey} // 传入 Key 更新函数
+            onDeepseekKeyChange={setDeepseekKey} // 传入 Key 更新函数
             onBack={() => setView('chat')} 
           />
         )}

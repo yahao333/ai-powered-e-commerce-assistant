@@ -1,5 +1,5 @@
 
-import { KnowledgeItem } from "../types";
+import { KnowledgeItem, Product } from "../types";
 
 /**
  * LLM Agent 通用接口
@@ -10,6 +10,11 @@ export interface LLMAgent {
    * 更新知识库/政策
    */
   updatePolicies(newPolicies: KnowledgeItem[]): void;
+
+  /**
+   * 更新商品列表
+   */
+  updateProducts(newProducts: Product[]): void;
 
   /**
    * 处理对话核心逻辑

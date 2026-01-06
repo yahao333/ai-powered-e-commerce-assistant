@@ -1,7 +1,7 @@
 
 import { Type, FunctionDeclaration } from "@google/genai";
-import { MOCK_PRODUCTS, MOCK_ORDERS } from "../constants";
-import { KnowledgeItem } from "../types";
+import { MOCK_ORDERS } from "../constants";
+import { KnowledgeItem, Product } from "../types";
 
 // --- 1. 工具定义 (Gemini Format) ---
 export const getGeminiTools = (policies: KnowledgeItem[]): FunctionDeclaration[] => {
@@ -117,13 +117,14 @@ export const TOOL_DISPLAY_NAMES: Record<string, string> = {
  * @param name 工具函数名
  * @param args 参数对象
  * @param policies 当前的知识库策略
+ * @param products 当前的商品列表
  */
-export async function executeToolLogic(name: string, args: any, policies: KnowledgeItem[]) {
+export async function executeToolLogic(name: string, args: any, policies: KnowledgeItem[], products: Product[]) {
   console.log(`[调试日志/ToolRegistry] 执行工具: ${name}`, args);
   
   switch (name) {
     case 'searchProducts':
-      const results = MOCK_PRODUCTS.filter(p => 
+      const results = products.filter(p => 
         p.name.toLowerCase().includes(args.query.toLowerCase()) || 
         p.category.toLowerCase().includes(args.query.toLowerCase())
       );
