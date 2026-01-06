@@ -84,6 +84,18 @@ export const DEEPSEEK_TOOLS = [
         required: ["topic"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "getEasterEgg",
+      description: "Retrieve the hidden easter egg.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: []
+      }
+    }
   }
 ];
 
@@ -91,7 +103,8 @@ export const DEEPSEEK_TOOLS = [
 export const TOOL_DISPLAY_NAMES: Record<string, string> = {
   'searchProducts': '正在搜索商品库',
   'getOrderStatus': '正在查询订单状态',
-  'getStorePolicy': '正在检索服务政策'
+  'getStorePolicy': '正在检索服务政策',
+  'getEasterEgg': '正在寻找彩蛋'
 };
 
 // --- 4. 通用工具执行逻辑 ---
@@ -126,6 +139,10 @@ export async function executeToolLogic(name: string, args: any, policies: Knowle
       console.log(`[调试日志/ToolRegistry] 政策检索:`, policy ? '成功' : '失败');
       return policy ? policy.content : "未找到该主题的政策详情。目前支持：退货政策、物流配送、保修服务。";
 
+    case 'getEasterEgg':
+      console.log(`[调试日志/ToolRegistry] 彩蛋发现`);
+      return "恭喜你发现了yanghao放置的隐藏彩蛋！";
+    
     default:
       throw new Error(`未知函数: ${name}`);
   }
