@@ -2,7 +2,7 @@
 import { SYSTEM_PROMPT } from "../constants";
 import { KnowledgeItem } from "../types";
 import { LLMAgent } from "./agentInterface";
-import { DEEPSEEK_TOOLS, TOOL_DISPLAY_NAMES, executeToolLogic } from "./toolRegistry";
+import { getDeepSeekTools, TOOL_DISPLAY_NAMES, executeToolLogic } from "./toolRegistry";
 
 // DeepSeek 兼容 OpenAI 接口规范
 interface DeepSeekMessage {
@@ -65,7 +65,7 @@ export class DeepSeekAgent implements LLMAgent {
       const requestPayload = {
         model: 'deepseek-chat', // 使用 DeepSeek V3
         messages: this.history,
-        tools: DEEPSEEK_TOOLS,
+        tools: getDeepSeekTools(this.policies),
         stream: false
       };
 

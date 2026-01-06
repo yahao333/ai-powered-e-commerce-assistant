@@ -3,7 +3,7 @@ import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { SYSTEM_PROMPT } from "../constants";
 import { KnowledgeItem } from "../types";
 import { LLMAgent } from "./agentInterface";
-import { GEMINI_TOOLS, TOOL_DISPLAY_NAMES, executeToolLogic } from "./toolRegistry";
+import { getGeminiTools, TOOL_DISPLAY_NAMES, executeToolLogic } from "./toolRegistry";
 
 export class GeminiAgent implements LLMAgent {
   private history: any[] = [];
@@ -39,7 +39,7 @@ export class GeminiAgent implements LLMAgent {
         contents: this.history,
         config: {
           systemInstruction: SYSTEM_PROMPT,
-          tools: [{ functionDeclarations: GEMINI_TOOLS }],
+          tools: [{ functionDeclarations: getGeminiTools(this.policies) }],
         },
       });
 

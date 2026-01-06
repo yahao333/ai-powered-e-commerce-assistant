@@ -4,7 +4,9 @@ import { MOCK_PRODUCTS, MOCK_ORDERS } from "../constants";
 import { KnowledgeItem } from "../types";
 
 // --- 1. 工具定义 (Gemini Format) ---
-export const GEMINI_TOOLS: FunctionDeclaration[] = [
+export const getGeminiTools = (policies: KnowledgeItem[]): FunctionDeclaration[] => {
+  const policyTopics = policies.map(p => p.topic).join(', ');
+  return [
   {
     name: 'searchProducts',
     parameters: {
@@ -31,18 +33,20 @@ export const GEMINI_TOOLS: FunctionDeclaration[] = [
     name: 'getStorePolicy',
     parameters: {
       type: Type.OBJECT,
-      description: 'Retrieve store policies like returns, shipping, or warranty.',
+      description: `Retrieve store policies. Available topics: ${policyTopics}.`,
       properties: {
-        topic: { type: Type.STRING, description: 'The policy topic (Return, Shipping, Warranty).' },
+        topic: { type: Type.STRING, description: `The policy topic (${policyTopics}).` },
       },
       required: ['topic'],
     },
   }
-];
+]};
 
 // --- 2. 工具定义 (OpenAI/DeepSeek Format) ---
 // DeepSeek 兼容 OpenAI 的 Function Calling 格式
-export const DEEPSEEK_TOOLS = [
+export const getDeepSeekTools = (policies: KnowledgeItem[]) => {
+  const policyTopics = policies.map(p => p.topic).join(', ');
+  return [
   {
     type: "function",
     function: {
@@ -75,11 +79,11 @@ export const DEEPSEEK_TOOLS = [
     type: "function",
     function: {
       name: "getStorePolicy",
-      description: "Retrieve store policies like returns, shipping, or warranty.",
+      description: `Retrieve store policies. Available topics: ${policyTopics}.`,
       parameters: {
         type: "object",
         properties: {
-          topic: { type: "string", description: "The policy topic (Return, Shipping, Warranty)." }
+          topic: { type: "string", description: `The policy topic (${policyTopics}).` }
         },
         required: ["topic"]
       }
@@ -97,7 +101,7 @@ export const DEEPSEEK_TOOLS = [
       }
     }
   }
-];
+]};
 
 // --- 3. 工具显示名称映射 ---
 export const TOOL_DISPLAY_NAMES: Record<string, string> = {
@@ -137,7 +141,7 @@ export async function executeToolLogic(name: string, args: any, policies: Knowle
         args.topic.toLowerCase().includes(k.topic.toLowerCase())
       );
       console.log(`[调试日志/ToolRegistry] 政策检索:`, policy ? '成功' : '失败');
-      return policy ? policy.content : "未找到该主题的政策详情。目前支持：退货政策、物流配送、保修服务。";
+      return policy ? policy.content : `未找到该主题的政策详情。目前支持：${policies.map(p => p.topic).join('、')}。`;
 
     case 'getEasterEgg':
       console.log(`[调试日志/ToolRegistry] 彩蛋发现`);
